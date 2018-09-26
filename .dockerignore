@@ -1,0 +1,50 @@
+# File for defining what to skip for Docker image build (in case we had a prod image)
+# In such case at a minumum `composer auto-scripts` if not full install would be executed during build,
+# so we can safely ignore some files from dev env.
+
+### IDE files
+.idea/
+
+### Composer files
+auth.json
+composer.phar
+# uncomment if you plan to do full install during docker builds
+#/vendor/
+
+### GIT files
+.git
+# Skipped as it makes build very slow and since it is needed by composer when working on dev branches
+#vendor/*/*/.git
+
+### Symfony template
+/build/
+/node_modules/
+npm-debug.log
+yarn-error.log
+var/cache/*
+var/data/*
+var/logs/*
+var/sessions/*
+!var/cache/.gitkeep
+!var/data/.gitkeep
+!var/logs/.gitkeep
+!var/sessions/.gitkeep
+
+### Generated assets and user uploads
+public/bundles/
+/public/build/fonts/glyphicons-*
+/public/build/images/glyphicons-*
+
+### PHPUnit
+.phpunit
+/phpunit.xml
+
+### Web server PID
+/.web-server-pid
+
+### friendsofphp/php-cs-fixer
+/.php_cs
+/.php_cs.cache
+
+# Backup entities generated with doctrine:generate:entities command
+*/Entity/*~

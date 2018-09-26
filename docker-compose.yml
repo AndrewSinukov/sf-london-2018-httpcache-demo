@@ -1,0 +1,116 @@
+version: '3.3'
+# Example of server setup for dev use with Varnish, nginx, mariadb and php.
+#
+# For use with Docker Compose.
+#
+# You can reach this on (in case of Docker for Mac, host name might vary):
+#  http://localhost:8081 varnish (reverse proxy which is in front of nginx)
+#  http://localhost:8080 nginx ("backend")
+#
+# NOTE: This is on purpose not using a .env file, so that the symfony-demo provided .env.dist still works for usage with
+#       builtin php server + sqlite (that is w/o Varnish, but will allow you to inspect headers w/o booting up Docker).
+#
+# This is based on https://github.com/ezsystems/ezplatform/tree/master/doc/docker NOT because I recommend you start
+# there if you want to get your own docker setup, but because I know it inside out and it had what I need for this demo.
+#
+# For your own needs check these out (first one also with Varnish, sans xkey, but with self signed ssl and http/2):
+# - https://github.com/tulik/symfony-4-docker-runtime-env
+# - https://github.com/dunglas/symfony-docker
+# - https://github.com/symfony/demo/pull/833
+# (...)
+
+services:
+  php:
+    # TIP: If you look to build your own Docker setup, you should rather use official php image, even if this technically extends it.
+    # WARNING: This implies the composer installation on host machine should have been done on same PHP version (7.2.x), so if not:
+    # - Change this to `ezsystems/php:7.1-v1` if you are on PHP 7.1 locally, and afterwards run `composer update` to make
+    #   sure you have packages for PHP 7.1. If it fails on `ocramius/` package, just `rm -Rf vendor/ocramius` and try again.
+    image: ezsystems/php:7.2-v1
+    volumes:
+     - ./:/var/www:cached
+     - ~/.composer:/root/.composer:cached
+     - ./docker/entrypoint/php:/docker-entrypoint-initdb.d/:ro,cached
+    depends_on:
+     - db
+    environment:
+      # These are set in .env, run composer install to generate it from .evn.dist
+     - APP_ENV
+     - APP_DEBUG
+     - APP_SECRET
+     - DATABASE_URL=mysql://user:secret@db:3306/testdb?charset=utf8mb4&serverVersion=mariadb-10.3.9
+     - MAILER_URL=null://localhost
+     # ! Not valid TRUSTED_PROXIES value
+     - TRUSTED_PROXIES=varnish
+     - PURGE_SERVER
+     # For use by /scripts/wait_for_db.php
+     - DATABASE_USER=user
+     - DATABASE_PASSWORD=secret
+     - DATABASE_NAME=testdb
+    networks:
+     - backend
+
+  nginx:
+    image: nginx:stable
+    volumes:
+     - ./:/var/www:ro,cached
+    depends_on:
+     - php
+    ports:
+     - "8080:80"
+    # This could also have been done in entrypoint most likely
+    command: /bin/bash -c "cp -a /var/www/docker/nginx/default.conf /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+    networks:
+     - frontend
+     - backend
+
+  db:
+    # Note: You should rather use mariadb:10.3 directly as this is "prototype", used here to make sure db is up
+    #       before php tries to write fixtures during startup (in entrypoint).
+    image: healthcheck/mariadb
+    volumes:
+     - ./docker/entrypoint/mysql:/docker-entrypoint-initdb.d/:ro,cached
+    environment:
+     - MYSQL_RANDOM_ROOT_PASSWORD=1
+     - MYSQL_USER=user
+     - MYSQL_PASSWORD=secret
+     - MYSQL_DATABASE=testdb
+     - TERM=dumb
+    networks:
+     - backend
+
+  varnish:
+    # "Official" Varnish image is coming, and it will allow us to install xkey in entrypoint, see:
+    #            https://github.com/docker-library/official-images/pull/4404
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-varnish
+    volumes:
+      # As this is mainly for dev usage, this allows to change VCL without having to re-build
+     - ./docker/varnish/default.vcl:/etc/varnish/default.vcl:ro,cached
+     - ./docker/varnish/fos:/etc/varnish/fos:ro,cached
+    ports:
+     - "8081:80"
+    environment:
+     - VARNISH_MALLOC_SIZE=256m
+    depends_on:
+     - nginx
+     - php
+    networks:
+     - frontend
+     - backend
+
+## DEBUG VARNISH??
+# In need of debugging all request going to Varnish? Use varnishlog, example:
+# $ docker-compose exec varnish varnishlog -c -i ReqURL,ReqMethod -I ReqHeader:xkey
+#
+# Or more relevant only PURGE's with all info:
+# $ docker-compose exec varnish varnishlog -g request -q "ReqMethod eq 'PURGEKEYS'"
+#
+# But before doing that check that varnish proxy client has been configured for FOSHttpCacheBundle:
+# $ docker-compose exec php bin/console --env=dev debug:container fos_http_cache.default_proxy_client
+#
+# And if have made own prod container where you compile in code, make sure to rebuild php container on code changes ;)
+
+networks:
+  frontend:
+  backend:

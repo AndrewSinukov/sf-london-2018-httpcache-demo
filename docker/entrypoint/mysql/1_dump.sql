@@ -1,0 +1,2 @@
+-- MySQL dump 10.15  Distrib 10.0.32-MariaDB, for debian-linux-gnu (x86_64)
+--
