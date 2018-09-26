@@ -1,0 +1,18 @@
+fos_http_cache:
+    # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/tags.html
+    tags:
+        enabled: true
+
+    # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/proxy-client.html
+    proxy_client:
+        varnish:
+            tag_mode: purgekeys
+            http:
+                servers:
+                    - '%env(PURGE_SERVER)%'
+                #base_url: yourwebsite.com
+
+    # https://foshttpcachebundle.readthedocs.io/en/latest/features/user-context.html#configuration
+    #user_context:
+    #    enabled: true
+    #    role_provider: true
