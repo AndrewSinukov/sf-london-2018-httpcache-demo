@@ -22,6 +22,7 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use FOS\HttpCacheBundle\CacheManager;
 
 /**
  * Controller used to manage blog contents in the backend.
@@ -133,7 +134,7 @@ class BlogController extends AbstractController
      * @Route("/{id<\d+>}/edit",methods={"GET", "POST"}, name="admin_post_edit")
      * @IsGranted("edit", subject="post", message="Posts can only be edited by their authors.")
      */
-    public function edit(Request $request, Post $post): Response
+    public function edit(Request $request, Post $post, CacheManager $cache): Response
     {
         $form = $this->createForm(PostType::class, $post);
         $form->handleRequest($request);
@@ -141,6 +142,10 @@ class BlogController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $post->setSlug(Slugger::slugify($post->getTitle()));
             $this->getDoctrine()->getManager()->flush();
+
+            // Tag invalidation can also be done by annotation:
+            // https://foshttpcachebundle.readthedocs.io/en/latest/features/tagging.html#tagging-and-invalidating-with-controller-annotations
+            $cache->invalidateTags(['post-' . $post->getId()]);
 
             $this->addFlash('success', 'post.updated_successfully');
 
@@ -159,7 +164,7 @@ class BlogController extends AbstractController
      * @Route("/{id}/delete", methods={"POST"}, name="admin_post_delete")
      * @IsGranted("delete", subject="post")
      */
-    public function delete(Request $request, Post $post): Response
+    public function delete(Request $request, Post $post, CacheManager $cache): Response
     {
         if (!$this->isCsrfTokenValid('delete', $request->request->get('token'))) {
             return $this->redirectToRoute('admin_post_index');
@@ -173,6 +178,8 @@ class BlogController extends AbstractController
         $em = $this->getDoctrine()->getManager();
         $em->remove($post);
         $em->flush();
+
+        $cache->invalidateTags(['post-' . $post->getId()]);
 
         $this->addFlash('success', 'post.deleted_successfully');
 
