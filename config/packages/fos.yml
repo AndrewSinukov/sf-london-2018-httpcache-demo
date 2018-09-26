@@ -12,6 +12,31 @@ fos_http_cache:
                     - '%env(PURGE_SERVER)%'
                 #base_url: yourwebsite.com
 
+    # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/headers.html
+    cache_control:
+        defaults:
+            overwrite: true
+        rules:
+            # We could set cache headers in config if we did not have access to edit controller.
+            #
+            # Example here is using reverse_proxy_ttl here to avoid other proxies caching the page:
+            # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/headers.html#reverse-proxy-ttl
+            # This is useful if you are caching content for logged in users..
+
+            # match post action of BlogController
+            -
+                match: { path: .*/blog/posts/.* }
+                headers:
+                    cache_control: { public: true, s_maxage: 0 }
+                    reverse_proxy_ttl: 3000
+
+            # match index action of BlogController
+            -
+                match: { path: .*/blog/$ }
+                headers:
+                    cache_control: { public: true, s_maxage: 0 }
+                    reverse_proxy_ttl: 3000
+
     # https://foshttpcachebundle.readthedocs.io/en/latest/features/user-context.html#configuration
     #user_context:
     #    enabled: true
