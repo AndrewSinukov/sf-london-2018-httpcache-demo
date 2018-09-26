@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use FOS\HttpCacheBundle\CacheManager;
+use FOS\HttpCacheBundle\Configuration\Tag;
 
 /**
  * Controller used to manage blog contents in the backend.
@@ -66,6 +67,7 @@ class BlogController extends AbstractController
      * Creates a new Post entity.
      *
      * @Route("/new", methods={"GET", "POST"}, name="admin_post_new")
+     * @Tag("posts")
      *
      * NOTE: the Method annotation is optional, but it's a recommended practice
      * to constraint the HTTP methods each controller responds to (by default
@@ -145,7 +147,7 @@ class BlogController extends AbstractController
 
             // Tag invalidation can also be done by annotation:
             // https://foshttpcachebundle.readthedocs.io/en/latest/features/tagging.html#tagging-and-invalidating-with-controller-annotations
-            $cache->invalidateTags(['post-' . $post->getId()]);
+            $cache->invalidateTags(['post-' . $post->getId(), 'posts']);
 
             $this->addFlash('success', 'post.updated_successfully');
 
@@ -179,7 +181,7 @@ class BlogController extends AbstractController
         $em->remove($post);
         $em->flush();
 
-        $cache->invalidateTags(['post-' . $post->getId()]);
+        $cache->invalidateTags(['post-' . $post->getId(), 'posts']);
 
         $this->addFlash('success', 'post.deleted_successfully');
 
