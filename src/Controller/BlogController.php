@@ -43,7 +43,7 @@ class BlogController extends AbstractController
      * @Route("/", defaults={"page": "1", "_format"="html"}, methods={"GET"}, name="blog_index")
      * @Route("/rss.xml", defaults={"page": "1", "_format"="xml"}, methods={"GET"}, name="blog_rss")
      * @Route("/page/{page<[1-9]\d*>}", defaults={"_format"="html"}, methods={"GET"}, name="blog_index_paginated")
-     * @Cache(smaxage="3600", public=true)
+     * @Cache(smaxage="3600", public=true, vary={"X-User-Context-Hash"})
      * @Tag("posts")
      *
      * NOTE: For standard formats, Symfony will also automatically choose the best
@@ -66,7 +66,7 @@ class BlogController extends AbstractController
 
     /**
      * @Route("/posts/{slug}", methods={"GET"}, name="blog_post")
-     * @Cache(smaxage="3600", public=true)
+     * @Cache(smaxage="3600", public=true, vary={"X-User-Context-Hash"})
      *
      * FOS NOTE: Tags can also be done in php, twig and config:
      * https://foshttpcachebundle.readthedocs.io/en/latest/features/tagging.html

@@ -6,6 +6,8 @@ acl invalidators {
 }
 
 import std;
+include "fos/fos_user_context.vcl";
+include "fos/fos_user_context_url.vcl";
 include "fos/fos_custom_ttl.vcl";
 include "fos/fos_debug.vcl";
 include "fos/fos_refresh.vcl";
@@ -23,14 +25,17 @@ sub vcl_recv {
     call fos_purge_recv;
     call fos_refresh_recv;
     call fos_tags_xkey_recv;
+    call fos_user_context_recv;
 }
 
 sub vcl_backend_response {
+    call fos_user_context_backend_response;
     call fos_ban_backend_response;
     call fos_custom_ttl_backend_response;
 }
 
 sub vcl_deliver {
+    call fos_user_context_deliver;
     call fos_debug_deliver;
     call fos_ban_deliver;
 }

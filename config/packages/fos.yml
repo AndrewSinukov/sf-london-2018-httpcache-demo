@@ -37,7 +37,13 @@ fos_http_cache:
                     cache_control: { public: true, s_maxage: 0 }
                     reverse_proxy_ttl: 3000
 
-    # https://foshttpcachebundle.readthedocs.io/en/latest/features/user-context.html#configuration
-    #user_context:
-    #    enabled: true
-    #    role_provider: true
+    # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/user-context.html
+    user_context:
+        enabled: true
+        hash_cache_ttl: 900
+        # By default we enable role_provider so user context hash varies by symfony role which is everything we need on demo here.
+        # Custom providers is also possible in case of more advance roles logic or other factors that should be part of hash:
+        # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/user-context.html#custom-context-providers
+        role_provider: true
+        # By default FOS Http cache has this enabled. As we want to opt in, we disable and add headers in controller
+        always_vary_on_context_hash: false
