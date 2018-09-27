@@ -38,4 +38,5 @@ sub vcl_deliver {
     call fos_user_context_deliver;
     call fos_debug_deliver;
     call fos_ban_deliver;
+    call fos_tags_xkey_deliver;
 }
