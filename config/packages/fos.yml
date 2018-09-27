@@ -2,15 +2,24 @@ fos_http_cache:
     # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/tags.html
     tags:
         enabled: true
+        response_header: Surrogate-Key
 
     # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/proxy-client.html
     proxy_client:
         varnish:
+            # Not used, as we have configured Fastly in cache_manager.custom_proxy_client
+            # go to xkey branch to see Varnish in use
+            tags_header: Surrogate-Key
             tag_mode: purgekeys
             http:
                 servers:
                     - '%env(PURGE_SERVER)%'
                 #base_url: yourwebsite.com
+
+    # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/cache-manager.html
+    cache_manager:
+        enabled: true
+        custom_proxy_client: App\ProxyClient\Fastly
 
     # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/headers.html
     cache_control:
@@ -27,15 +36,17 @@ fos_http_cache:
             -
                 match: { path: .*/blog/posts/.* }
                 headers:
-                    cache_control: { public: true, s_maxage: 0 }
-                    reverse_proxy_ttl: 3000
+                    cache_control: { public: true, max_age: 3600 }
+                    # Ideally we would like to use this instead, maybe abstracted via FOS's reverse_proxy_ttl header.
+                    # https://docs.fastly.com/guides/performance-tuning/controlling-caching#changing-caching-times-for-different-users
+                    #Surrogate-Control: 'max-age=3600'
 
             # match index action of BlogController
             -
                 match: { path: .*/blog/$ }
                 headers:
-                    cache_control: { public: true, s_maxage: 0 }
-                    reverse_proxy_ttl: 3000
+                    cache_control: { public: true, max_age: 3600 }
+                    #Surrogate-Control: 'max-age=3600'
 
     # https://foshttpcachebundle.readthedocs.io/en/latest/reference/configuration/user-context.html
     user_context:
@@ -47,3 +58,6 @@ fos_http_cache:
         role_provider: true
         # By default FOS Http cache has this enabled. As we want to opt in, we disable and add headers in controller
         always_vary_on_context_hash: false
+        # Disabled for Fastly as it currently depends on Ban support (user context invalidation will be changed to tags in the future)
+        logout_handler:
+            enabled: false

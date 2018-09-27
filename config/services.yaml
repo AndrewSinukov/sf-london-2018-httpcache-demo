@@ -35,3 +35,8 @@ services:
     # 'arguments' key and define the arguments just below the service class
     App\EventSubscriber\CommentNotificationSubscriber:
         $sender: '%app.notifications.email_sender%'
+
+    # Simple example showing how custom ProxyClient for Fastly could be done
+    App\ProxyClient\Fastly:
+      $httpDispatcher: '@fos_http_cache.proxy_client.varnish.http_dispatcher'
+      $options: { service_id: 'YOUR_FASTLY_SERVICE_ID', api_token: 'YOUR_FASTLY_TOKEN' }
