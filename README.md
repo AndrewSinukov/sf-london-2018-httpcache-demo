@@ -48,7 +48,7 @@ $ docker-compose exec varnish varnishlog -g request -q "ReqMethod eq 'PURGEKEYS'
 
 On Docker for Mac you'll for instance end up with:
 - http://localhost:8081 _(Varnish, to see headers and Varnish in action)_
-- http://localhost:8081 _(Nginx, to see headers from backend)_
+- http://localhost:8080 _(Nginx, to see headers from backend)_
 
 _Check documentation for your docker installation if in doubt._
 
